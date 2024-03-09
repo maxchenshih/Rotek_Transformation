@@ -1,0 +1,100 @@
+version: '3'
+
+services:
+
+# 線上估價系統
+    online_quotation_web:
+        image: nginx:alpine
+        container_name: online_quotation_web
+        volumes:
+            - "./online_quotation/etc/nginx/default.conf:/etc/nginx/conf.d/default.conf"
+            - "./online_quotation/etc/ssl:/etc/ssl"
+            - "./online_quotation/web:/var/www/html"
+            - "./online_quotation/etc/nginx/default.template.conf:/etc/nginx/conf.d/default.template"
+        ports:
+            - "8000:80"
+            - "3000:443"
+        environment:
+            - NGINX_HOST=${NGINX_HOST}
+        command: /bin/sh -c "envsubst '$$NGINX_HOST' < /etc/nginx/conf.d/default.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+        restart: always
+        depends_on:
+            - online_quotation_php
+            - online_quotation_db
+        networks: 
+            - roteknetwork
+
+
+    online_quotation_php:
+        image: php:8.3-fpm
+        container_name: online_quotation_php
+        build:
+            context: .
+            dockerfile: online-quotation-php-dockerfile
+        restart: always
+        volumes:
+            - "./online_quotation/etc/php/php.ini:/usr/local/etc/php/conf.d/php.ini"
+            - "./online_quotation/web:/var/www/html"
+        networks: 
+            - roteknetwork
+
+
+    online_quotation_db:
+        image: mysql:${online_quotation_db_VERSION}
+        container_name: online_quotation_db
+        restart: always
+        env_file: 
+            - ".env"
+        environment:
+            - MYSQL_DATABASE=${online_quotation_db_DATABASE}
+            - MYSQL_ROOT_PASSWORD=${online_quotation_db_ROOT_PASSWORD}
+            - MYSQL_USER=${online_quotation_db_USER}
+            - MYSQL_PASSWORD=${online_quotation_db_PASSWORD}
+        ports:
+            - "8989:3306"
+        volumes:
+            - "./online_quotation/database/mysql:/var/lib/mysql"
+        networks: 
+            - roteknetwork
+
+
+# AI客服機器人
+
+    chatbot:
+        build:
+            context: .
+            dockerfile: chatbot-dockerfile
+        container_name: chatbot
+        restart: always
+        ports:
+            - "3001:80"
+        volumes:
+            - ./chatbot:/app
+            - /chatbot/app/node_modules
+            - /chatbot/app/.next
+            - ./chatbot/workdir:/app/workdir
+        networks:
+            - roteknetwork
+
+
+    chatdb:
+        image: mysql:${chatdb_VERSION}
+        container_name: chatdb
+        restart: always
+        env_file: 
+            - ".env"
+        environment:
+            MYSQL_DATABASE: ${chatdb_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${chatdb_ROOT_PASSWORD}
+            MYSQL_USER: ${chatdb_USER}
+            MYSQL_PASSWORD: ${chatdb_PASSWORD}
+        ports:
+            - "3307:3306"
+        volumes:
+            - ./chatbot/database:/var/lib/mysql
+        networks: 
+            - roteknetwork
+
+networks:
+  roteknetwork:
+    driver: bridge
