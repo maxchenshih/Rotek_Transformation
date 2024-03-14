@@ -1,0 +1,5 @@
+{
+    "git.ignoreLimitWarning": true,
+    "remote.SSH.remoteServerListenOnSocket": false,
+    "remote.SSH.defaultForwardedPorts": [],
+}

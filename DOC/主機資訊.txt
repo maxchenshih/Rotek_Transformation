@@ -1,0 +1,15 @@
+Google gcp VM
+
+server name = rotek-server1
+
+固定IP : 104.199.182.89 
+
+
+SSH 帳號 : maxchenshih@104.199.182.89
+
+maxchenshih@wizard.rotekwater.com
+
+Host wizard.rotekwater.com
+    HostName wizard.rotekwater.com
+    User maxchenshih
+    PubKeyAuthentication yes
